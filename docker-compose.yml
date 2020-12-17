@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+
+  data-feeder:
+    image: "tamwini/locust:latest"
+    volumes:
+      - ./:/app
+    command: python /app/locust-scripts/data_feeder.py
+    env_file:
+      - locust.env
+
+  master:
+    image: "tamwini/locust:latest"
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./:/app
+    command: locust -f /app/locust-scripts/tamwini_load_testing.py --master -H http://localhost:8000
+    depends_on:
+      - data-feeder
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 200000
+    env_file:
+      - locust.env
+
+
+  worker:
+    image: "tamwini/locust:latest"
+    volumes:
+      - ./:/app
+    command: locust -f /app/locust-scripts/tamwini_load_testing.py --worker --master-host master
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 200000
+    env_file:
+      - locust.env
